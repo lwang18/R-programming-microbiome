@@ -297,6 +297,7 @@ grid.arrange(PCoA_unifrac_W_wrap, PCoA_unifrac_W, ncol=1)
 # PART II: The art of bar chars
 
 1. All samples - sanity check
+
 ```
 # w/o rarefy
 Before <-
@@ -316,10 +317,10 @@ After <-
 
 require(gridExtra)
 grid.arrange(Before, After, ncol=2)
-
 ```
 
 2. Take phylo_rarefy and then subset the top 50 otus
+
 ```
 phylo_rarefy_top <- names(sort(taxa_sums(phylo_rarefy), TRUE)[1:50])
 phylo_rarefy_top50 <-prune_taxa(phylo_rarefy_top, phylo_rarefy)
@@ -368,6 +369,7 @@ grid.arrange(Top50_phylo, Top50_ggplot, ncol=2)
 ```
 
 4. Feceted bar charts
+
 ```
 ggplot(pd, aes(x=Sample, y=Abundance, fill=Family)) +
   geom_bar(stat="identity") +
@@ -378,6 +380,7 @@ ggplot(pd, aes(x=Sample, y=Abundance, fill=Family)) +
 ```
 
 5. Horizontal display feceted bar charts
+
 ```
 ggplot(pd, aes(x=Sample, y=Abundance, fill=Family)) +
     geom_bar(stat="identity") +
@@ -413,7 +416,7 @@ pd$Sample = factor(pd$Sample,
 ```
 
 ```
-Family<-
+Family <-
   ggplot(pd, aes(x=Sample, y=Abundance, fill=Family)) +
   geom_bar(stat="identity") +
   theme(axis.title.y = element_blank(), 
