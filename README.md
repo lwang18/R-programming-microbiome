@@ -1,4 +1,4 @@
-# R code for ecological data analysis
+# PART I: R code for ecological data analysis
 
 by Ling Wang
 
@@ -293,6 +293,165 @@ PCoA_unifrac_W_wrap=
 ```
 grid.arrange(PCoA_unifrac_W_wrap, PCoA_unifrac_W, ncol=1)
 ```
+
+# PART II: The art of bar chars
+
+1. All samples - sanity check
+```
+# w/o rarefy
+Before <-
+  plot_bar(phylo,  fill="Family")+
+  geom_bar(aes(color=Family, fill=Family), stat="identity", position="stack")+
+  theme(legend.position="bottom",
+        legend.text = element_text(size = 4),
+        legend.key.size = unit(0.1, "cm"),legend.key.height = unit(0.1, "cm"))
+
+# w/ rarefy
+After <-
+  plot_bar(phylo_rarefy,  fill="Family")+
+  geom_bar(aes(color=Family, fill=Family), stat="identity", position="stack")+
+  theme(legend.position="bottom",
+        legend.text = element_text(size = 4),
+        legend.key.size = unit(0.1, "cm"),legend.key.height = unit(0.1, "cm"))
+
+require(gridExtra)
+grid.arrange(Before, After, ncol=2)
+
+```
+
+2. Take phylo_rarefy and then subset the top 50 otus
+```
+phylo_rarefy_top <- names(sort(taxa_sums(phylo_rarefy), TRUE)[1:50])
+phylo_rarefy_top50 <-prune_taxa(phylo_rarefy_top, phylo_rarefy)
+
+Top50 <-
+  plot_bar(phylo_rarefy_top50,  fill="Family")+
+  geom_bar(aes(color=Family, fill=Family), stat="identity", position="stack")+
+  theme(legend.position="bottom",
+        legend.text = element_text(size = 4),
+        legend.key.size = unit(0.1, "cm"),legend.key.height = unit(0.1, "cm"))
+```
+
+3. Merged by genotype_location & normalize by proportion
+
+```
+phylo_rarefy_top50_merge = merge_samples(phylo_rarefy_top50, "genotype_location")
+sample_data(phylo_rarefy_top50_merge)$genotype_location <- levels(sample_data(phylo_rarefy_top50)$genotype_location)
+phylo_rarefy_top50_merge_nor = transform_sample_counts(phylo_rarefy_top50_merge, function(x) 100 * x/sum(x))
+```
+
+Plot Top50_merge_nor
+```
+Top50_phylo <-
+  plot_bar(phylo_rarefy_top50_merge_nor,  fill = "Family") + 
+  geom_bar(aes(color=Family, fill=Family), stat="identity", position="stack")+
+  theme(legend.text = element_text(size = 12),
+        legend.key.size = unit(0.5, "cm"),legend.key.height = unit(0.5, "cm"),
+        axis.text.x = element_text(size=12,angle = 0, hjust = 0.5, vjust = 0))
+ ```
+ 
+Transform phyloseq data into ggplot dataframe 
+ 
+```
+pd <- psmelt(phylo_rarefy_top50_merge_nor)
+head(pd)
+
+# stacked bar charts (same as Plot Top50_phylo)
+Top50_ggplot <-
+  ggplot(pd, aes(x=Sample, y=Abundance, fill=Family)) +
+  geom_bar(stat="identity") +
+  theme(legend.text = element_text(size = 12),
+        legend.key.size = unit(0.5, "cm"),legend.key.height = unit(0.5, "cm"),
+        axis.text.x = element_text(size=12,angle = 0, hjust = 0.5, vjust = 0))
+
+grid.arrange(Top50_phylo, Top50_ggplot, ncol=2)
+```
+
+4. Feceted bar charts
+```
+ggplot(pd, aes(x=Sample, y=Abundance, fill=Family)) +
+  geom_bar(stat="identity") +
+  theme(legend.text = element_text(size = 12),
+        legend.key.size = unit(0.5, "cm"),legend.key.height = unit(0.5, "cm"),
+        axis.text.x = element_text(size=12,angle = 0, hjust = 0.5, vjust = 0)) +
+  facet_grid(Family ~., scales="free", space="free") 
+```
+
+5. Horizontal display feceted bar charts
+```
+ggplot(pd, aes(x=Sample, y=Abundance, fill=Family)) +
+    geom_bar(stat="identity") +
+    theme(axis.title = element_blank(), 
+          legend.text = element_text(size = 12),
+          legend.key.size = unit(0.5, "cm"),legend.key.height = unit(0.5, "cm"),
+          
+          axis.text.y = element_text(size=5,angle = 90, hjust = 0.5, vjust = 0.5),
+          axis.text.x = element_text(size=5),
+          legend.position="bottom") +
+  
+    facet_grid(~Family , scales="free", space="free") +
+    coord_flip() 
+```
+
+6. Final version
+
+First, let's fix color and order of label.
+
+```
+# Fix color
+colourCount = length(unique(pd$OTU))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+
+# Fix label
+pd$Sample = factor(pd$Sample,
+                        levels=c('KO_Colon',
+                                 'WT_Colon',
+                                 'KO_Ileum',
+                                 'WT_Ileum',
+                                 'KO_Mucus',
+                                 'WT_Mucus'))
+```
+
+```
+Family<-
+  ggplot(pd, aes(x=Sample, y=Abundance, fill=Family)) +
+  geom_bar(stat="identity") +
+  theme(axis.title.y = element_blank(), 
+        axis.text.y = element_text(size=8,angle=0,hjust=0.5,vjust=0.5,color="Black"),
+        axis.text.x = element_text(size=8,color="Black"),
+        axis.ticks = element_blank(),
+        
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(0.5, "cm"),legend.key.height = unit(0.5, "cm")
+        #legend.position="bottom"
+        )+
+        
+        #panel.grid.minor = element_blank(),
+        #panel.grid.major = element_line(linetype = "solid",size=0.1,colour = "grey"),
+        #panel.background = element_rect(fill = "white", colour = "grey", size=0.3),
+        
+        #strip.background=element_rect(fill = "grey", colour = "grey"),
+        #strip.text=element_text(size=10,color="Black")
+   
+  
+  facet_wrap(~Family , nrow=3) +
+  coord_flip() +
+  #scale_fill_manual(values = getPalette(colourCount)) 
+  scale_fill_viridis_d(option = "C", direction=-1)+
+  ylab("Percentage of Sequences")
+
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
